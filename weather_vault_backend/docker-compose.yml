@@ -1,0 +1,78 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      target: dev
+      dockerfile: ./Dockerfile
+    image: weather_app_python:${WEATHER_APP_PYTHON_VERSION:-latest}
+    restart: always
+    ports:
+      # Exposes application port.
+    - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      WEATHER_APP_PYTHON_HOST: 0.0.0.0
+      WEATHER_APP_PYTHON_RELOAD: "True"
+      WEATHER_APP_PYTHON_DB_HOST: weather_app_python-db
+      WEATHER_APP_PYTHON_DB_PORT: 5432
+      WEATHER_APP_PYTHON_DB_USER: weather_app_python
+      WEATHER_APP_PYTHON_DB_PASS: weather_app_python
+      WEATHER_APP_PYTHON_DB_BASE: weather_app_python
+      WEATHER_APP_PYTHON_REDIS_HOST: weather_app_python-redis
+    volumes:
+      - .:/app/src/
+
+  db:
+    image: postgres:18.3-trixie
+    hostname: weather_app_python-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "weather_app_python"
+      POSTGRES_USER: "weather_app_python"
+      POSTGRES_DB: "weather_app_python"
+    volumes:
+      - weather_app_python-db-data:/var/lib/postgresql
+    restart: always
+    healthcheck:
+      test: pg_isready -U weather_app_python
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  migrator:
+    <<: *main_app
+    restart: "no"
+    command: alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+
+  redis:
+    image: redis:8.4.0
+    hostname: "weather_app_python-redis"
+    restart: always
+    ports:
+      - 6379:6379
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 50
+
+
+
+volumes:
+  weather_app_python-db-data:
+    name: weather_app_python-db-data

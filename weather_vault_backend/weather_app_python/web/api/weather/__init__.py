@@ -1,0 +1,1 @@
+# This file is just to tell Python that this is a package. The actual code for the API is in the `endpoints` subpackage.

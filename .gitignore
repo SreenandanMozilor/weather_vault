@@ -1,0 +1,21 @@
+# Python Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite Databases (if you ever switch from Postgres for testing)
+*.sqlite3
+*.db
+
+# macOS System Files
+.DS_Store

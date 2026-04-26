@@ -1,0 +1,211 @@
+(weather-app-python) sreenandanpradeep@LAP196-SREENANDAN-PRADEEP weather_app_python % python -m weather_app_python
+INFO:     Will watch for changes in these directories: ['/Users/sreenandanpradeep/Desktop/Internship/weather_app_python']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [23355] using WatchFiles
+2026-04-24 14:19:27.514 | INFO     | logging:callHandlers:1737 - Started server process [23357]
+2026-04-24 14:19:27.514 | INFO     | logging:callHandlers:1737 - Waiting for application startup.
+2026-04-24 14:19:27.543 | INFO     | logging:callHandlers:1737 - Application startup complete.
+2026-04-24 14:19:31.553 | INFO     | logging:callHandlers:1737 - 127.0.0.1:62950 - "GET /api/docs HTTP/1.1" 200
+2026-04-24 14:19:31.580 | INFO     | logging:callHandlers:1737 - 127.0.0.1:62951 - "GET /static/docs/swagger-ui-bundle.js HTTP/1.1" 304
+2026-04-24 14:19:31.581 | INFO     | logging:callHandlers:1737 - 127.0.0.1:62950 - "GET /static/docs/swagger-ui.css HTTP/1.1" 304
+2026-04-24 14:19:31.620 | INFO     | logging:callHandlers:1737 - 127.0.0.1:62950 - "GET /api/openapi.json HTTP/1.1" 200
+2026-04-24 14:19:43.539 | INFO     | logging:callHandlers:1737 - 127.0.0.1:62953 - "POST /api/users/register HTTP/1.1" 500
+2026-04-24 14:19:43.539 | ERROR    | logging:callHandlers:1737 - Exception in ASGI application
+
+Traceback (most recent call last):
+
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               │     │   └ 4
+               │     └ 7
+               └ <function _main at 0x103285b10>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/spawn.py", line 135, in _main
+    return self._bootstrap(parent_sentinel)
+           │    │          └ 4
+           │    └ <function BaseProcess._bootstrap at 0x1030e9a60>
+           └ <SpawnProcess name='SpawnProcess-1' parent=23355 started>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/process.py", line 320, in _bootstrap
+    self.run()
+    │    └ <function BaseProcess.run at 0x1030e8e00>
+    └ <SpawnProcess name='SpawnProcess-1' parent=23355 started>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    │    │        │    │        │    └ {'config': <uvicorn.config.Config object at 0x108b08ec0>, 'target': <bound method Server.run of <uvicorn.server.Server object...
+    │    │        │    │        └ <SpawnProcess name='SpawnProcess-1' parent=23355 started>
+    │    │        │    └ ()
+    │    │        └ <SpawnProcess name='SpawnProcess-1' parent=23355 started>
+    │    └ <function subprocess_started at 0x10831bab0>
+    └ <SpawnProcess name='SpawnProcess-1' parent=23355 started>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+    │              └ [<socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 8000)>]
+    └ <bound method Server.run of <uvicorn.server.Server object at 0x108b09010>>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/uvicorn/server.py", line 75, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x10823ba00>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x108b08ec0>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x108b09010>
+           │           │    │             └ [<socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 8000)>]
+           │           │    └ <function Server.serve at 0x1082a8f60>
+           │           └ <uvicorn.server.Server object at 0x108b09010>
+           └ <function run at 0x107e8b7f0>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 204, in run
+    return runner.run(main)
+           │      │   └ <coroutine object Server.serve at 0x108b2e7a0>
+           │      └ <function Runner.run at 0x107e8bc10>
+           └ <asyncio.runners.Runner object at 0x108b0a270>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 127, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<Server.serve() running at /Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.v...
+           │    │     └ <cyfunction Loop.run_until_complete at 0x108bcc940>
+           │    └ <uvloop.Loop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x108b0a270>
+> File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/uvicorn/protocols/http/httptools_impl.py", line 421, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+                   └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x10b1df770>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/uvicorn/middleware/proxy_headers.py", line 56, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129e0>>
+                 │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+                 │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+                 │    └ <fastapi.applications.FastAPI object at 0x109d9ee40>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x10b1df770>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129e0>>
+                           │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+                           └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129e0>>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x10b4e39d0>
+          └ <fastapi.applications.FastAPI object at 0x109d9ee40>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x10b5fb270>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x10b4e3250>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x10b4e39d0>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x10b5fb270>
+          │                            │    │    │     │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x10b46b8a0>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x10b4e3d90>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x10b4e3250>
+          └ <function wrap_app_handling_exceptions at 0x109d77b60>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x10b4e3d90>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x10b02c170>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x10b4e3d90>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x10b02c170>>
+          └ <fastapi.routing.APIRouter object at 0x10b02c170>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │     │      │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function Route.handle at 0x109d968d0>
+          └ APIRoute(path='/api/users/register', name='register_user', methods=['POST'])
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function request_response.<locals>.app at 0x10b338880>
+          └ APIRoute(path='/api/users/register', name='register_user', methods=['POST'])
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b8499b0>
+          │                            │    │        │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x10b6128b0>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x10b85ec40>
+          └ <function wrap_app_handling_exceptions at 0x109d77b60>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x10b85f1c0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.httptools_impl.RequestResponseCycle object at 0x10b5129...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x10b85ec40>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/fastapi/routing.py", line 116, in app
+    async with AsyncExitStack() as request_stack:
+               │                   └ <contextlib.AsyncExitStack object at 0x10b61d250>
+               └ <class 'contextlib.AsyncExitStack'>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 768, in __aexit__
+    raise exc
+          └ PendingRollbackError('This Session\'s transaction has been rolled back due to a previous exception during flush. To begin a n...
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 751, in __aexit__
+    cb_suppress = await cb(*exc_details)
+                        │   └ (<class 'sqlalchemy.exc.ProgrammingError'>, ProgrammingError('(sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <clas...
+                        └ <bound method _AsyncGeneratorContextManager.__aexit__ of <contextlib._AsyncGeneratorContextManager object at 0x10b82ccb0>>
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+          │    │   │      └ ProgrammingError('(sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class \'asyncpg.exceptions.UndefinedTableError\'...
+          │    │   └ <method 'athrow' of 'async_generator' objects>
+          │    └ <async_generator object get_db_session at 0x10b5c7760>
+          └ <contextlib._AsyncGeneratorContextManager object at 0x10b82ccb0>
+
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/weather_app_python/db/dependencies.py", line 19, in get_db_session
+    await session.commit()
+          │       └ <function AsyncSession.commit at 0x10aeae350>
+          └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x10b2e12b0>
+
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/sqlalchemy/ext/asyncio/session.py", line 1000, in commit
+    await greenlet_spawn(self.sync_session.commit)
+          │              │    │            └ <function Session.commit at 0x10ad86c40>
+          │              │    └ <sqlalchemy.orm.session.Session object at 0x10b605fd0>
+          │              └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x10b2e12b0>
+          └ <function greenlet_spawn at 0x10a13e1f0>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 190, in greenlet_spawn
+    result = context.switch(*args, **kwargs)
+             │       │       │       └ {}
+             │       │       └ ()
+             │       └ <method 'switch' of 'greenlet.greenlet' objects>
+             └ <_AsyncIoGreenlet object at 0x10b8ae680 (otid=0x7c1e582a0) dead>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/sqlalchemy/orm/session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+    │     └ <function SessionTransaction.commit at 0x10ad84ca0>
+    └ <sqlalchemy.orm.session.SessionTransaction object at 0x10b307cd0>
+  File "<string>", line 2, in commit
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/sqlalchemy/orm/state_changes.py", line 101, in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+    │    │                             │  │         └ <SessionTransactionState.DEACTIVE: 4>
+    │    │                             │  └ <attribute '__name__' of 'function' objects>
+    │    │                             └ <function SessionTransaction.commit at 0x10ad84bf0>
+    │    └ <function SessionTransaction._raise_for_prerequisite_state at 0x10ad7af00>
+    └ <sqlalchemy.orm.session.SessionTransaction object at 0x10b307cd0>
+  File "/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packages/sqlalchemy/orm/session.py", line 971, in _raise_for_prerequisite_state
+    raise sa_exc.PendingRollbackError(
+          │      └ <class 'sqlalchemy.exc.PendingRollbackError'>
+          └ <module 'sqlalchemy.exc' from '/Users/sreenandanpradeep/Desktop/Internship/weather_app_python/.venv/lib/python3.14/site-packa...
+
+sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedTableError'>: relation "user" does not exist
+[SQL: INSERT INTO "user" (username, hashed_password) VALUES ($1::VARCHAR, $2::VARCHAR) RETURNING "user".userid]
+[parameters: ('user1', '$2b$12$9ca7VQ6tUv2xq8qDqTgugeJiYu.rng9gdQtIechLa6DS4WFDRibT6')]
+(Background on this error at: https://sqlalche.me/e/20/f405) (Background on this error at: https://sqlalche.me/e/20/7s2a)

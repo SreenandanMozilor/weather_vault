@@ -1,36 +1,46 @@
-// The base URL of your Python FastAPI server
-const BASE_URL = 'http://127.0.0.1:8000/api';
-
 export class ApiClient {
-    // A helper method to automatically attach the JWT passport to requests
     static getHeaders() {
         const token = localStorage.getItem('weather_jwt');
-        const headers = {
-            'Content-Type': 'application/json'
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        return headers;
     }
 
-    // A unified fetch method that automatically throws errors if the backend rejects it
-    static async request(endpoint, options = {}) {
-        const url = `${BASE_URL}${endpoint}`;
-        const response = await fetch(url, {
-            ...options,
-            headers: this.getHeaders()
-        });
+    static async request(endpoint, options = {}, retries = 2) {
+        const fetchUrl = `http://127.0.0.1:8000/api${endpoint}`;
+        const fetchOptions = {
+            method: options.method || 'GET',
+            headers: this.getHeaders(),
+            cache: 'no-store', // THE FIX: Forces Chrome to always get fresh data from the DB!
+            ...options
+        };
 
-        const data = await response.json();
+        try {
+            const response = await fetch(fetchUrl, fetchOptions);
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Translate any Pydantic validation arrays into readable text
+                if (Array.isArray(data.detail)) {
+                    throw new Error(data.detail.map(err => err.msg).join(', '));
+                }
+                throw new Error(data.detail || 'API request failed');
+            }
+            return data;
 
-        if (!response.ok) {
-            // This will catch the 400 Bad Request if they try to save a 9th city!
-            throw new Error(data.detail || 'An API error occurred');
+        } catch (error) {
+            // THE SHOCK ABSORBER: If Uvicorn restarts, wait 500ms and try again silently!
+            if (error.message.includes('Failed to fetch') && retries > 0) {
+                console.warn(`Server reloading... pausing and retrying ${endpoint}`);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                return this.request(endpoint, options, retries - 1);
+            }
+            throw error;
         }
+    }
 
-        return data;
+    static async getCurrentWeather(cityName) {
+        return this.request(`/weather/current?city_name=${encodeURIComponent(cityName)}`);
     }
 }

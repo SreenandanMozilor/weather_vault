@@ -3,7 +3,6 @@ import { getWeatherClass, getWeatherIcon } from './ui-utils.js';
 export function createCard(city, isCelsius, onRemove) {
     const current = city.current_weather || {};
     
-    // Map the Python/Open-Meteo keys to your old variables!
     const weatherCode = current.weather_code || 0;
     const temp = current.temperature_2m || 0;
     const feelsLike = current.apparent_temperature || 0;
@@ -16,12 +15,20 @@ export function createCard(city, isCelsius, onRemove) {
     const unit = isCelsius ? '°C' : '°F';
     const currentIcon = getWeatherIcon(weatherCode);
 
+    // --- THE FIX: Smart Title Formatting ---
+    // If the city_name already contains the country, don't append it again!
+    let formattedTitle = city.city_name;
+    if (city.country && !formattedTitle.includes(city.country)) {
+        formattedTitle += `, ${city.country}`;
+    }
+
     const card = document.createElement('div');
     card.className = `weather-card ${themeClass}`;
     
     card.innerHTML = `
         <button class="remove-btn">✖</button>
-        <h2>${city.city_name}, ${city.country}</h2> <div class="current-weather">
+        <h2>${formattedTitle}</h2>
+        <div class="current-weather">
             <div>
                 <h1 class="temp">${Math.round(displayTemp)}${unit}</h1>
                 <p class="feels-like">Feels like: ${Math.round(displayFeels)}${unit}</p>
@@ -58,7 +65,6 @@ export function createErrorCard(err, onRemove, onRetry) {
         <button class="retry-error-btn">${btnLabel}</button>
     `;
 
-    // Attach event listeners directly
     card.querySelector('.remove-error-btn').addEventListener('click', onRemove);
     card.querySelector('.retry-error-btn').addEventListener('click', () => onRetry(err.cityName));
     

@@ -1,23 +1,42 @@
-import { ApiClient } from './api.js';
-
 export class Auth {
-    static async register(username, password) {
+    static async register(email, username, password) {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/users/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json', // Registration expects standard JSON!
-                },
-                body: JSON.stringify({ username, password })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, username, password }) // Added email
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                // Pydantic validation errors or duplicate usernames will trigger this
-                throw new Error(data.detail || 'Registration failed. Username may be taken.');
+                // If it's a 422 Validation Error, translate it for humans
+                if (Array.isArray(data.detail)) {
+                    const friendlyErrors = data.detail.map(err => {
+                        // Find out exactly which field caused the error (e.g., 'password' or 'username')
+                        const fieldName = err.loc[err.loc.length - 1]; 
+                        
+                        // Translate specific Pydantic errors into plain English
+                        if (fieldName === 'password' && err.type === 'string_too_short') {
+                            return "Your password is too short. Please use at least 8 characters.";
+                        }
+                        if (fieldName === 'username' && err.type === 'string_too_short') {
+                            return "Your username must be at least 3 characters long.";
+                        }
+                        if (err.type === 'missing') {
+                            return `Oops! You forgot to enter a ${fieldName}.`;
+                        }
+                        
+                        // Generic fallback: Capitalize the field name and show the message
+                        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}: ${err.msg}`;
+                    }).join(' \n ');
+                    
+                    throw new Error(friendlyErrors);
+                }
+                
+                // For standard 400/401 errors (like "Username already taken")
+                throw new Error(data.detail || 'Registration failed.');
             }
-
             return true;
             
         } catch (error) {
@@ -26,29 +45,45 @@ export class Auth {
         }
     }
     
-    static async login(username, password) {
-        // FastAPI's OAuth2PasswordRequestForm requires URL Encoded data, not JSON!
-        const formData = new URLSearchParams();
-        formData.append('username', username);
-        formData.append('password', password);
-
+    static async login(identifier, password) {
         try {
-            // We use standard fetch here because the headers are slightly different for login
             const response = await fetch('http://127.0.0.1:8000/api/users/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData.toString()
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password }) // Changed to identifier
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.detail || 'Login failed');
+                // If it's a 422 Validation Error, translate it for humans
+                if (Array.isArray(data.detail)) {
+                    const friendlyErrors = data.detail.map(err => {
+                        // Find out exactly which field caused the error (e.g., 'password' or 'username')
+                        const fieldName = err.loc[err.loc.length - 1]; 
+                        
+                        // Translate specific Pydantic errors into plain English
+                        if (fieldName === 'password' && err.type === 'string_too_short') {
+                            return "Your password is too short. Please use at least 8 characters.";
+                        }
+                        if (fieldName === 'username' && err.type === 'string_too_short') {
+                            return "Your username must be at least 3 characters long.";
+                        }
+                        if (err.type === 'missing') {
+                            return `Oops! You forgot to enter a ${fieldName}.`;
+                        }
+                        
+                        // Generic fallback: Capitalize the field name and show the message
+                        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}: ${err.msg}`;
+                    }).join(' \n ');
+                    
+                    throw new Error(friendlyErrors);
+                }
+                
+                // For standard 400/401 errors (like "Username already taken")
+                throw new Error(data.detail || 'Registration failed.');
             }
 
-            // Save the passport to the browser's vault!
             localStorage.setItem('weather_jwt', data.access_token);
             return true;
             
@@ -60,7 +95,6 @@ export class Auth {
 
     static logout() {
         localStorage.removeItem('weather_jwt');
-        // Refresh the page to clear out the UI
         window.location.reload();
     }
 

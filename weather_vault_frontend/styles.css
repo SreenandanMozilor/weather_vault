@@ -633,3 +633,84 @@ body {
 /* Loading animation for the SVG */
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .loading-spin { animation: spin 1s linear infinite; }
+
+/* =========================================
+   AUTHENTICATION UI STYLES
+   ========================================= */
+
+/* The main container for the login/signup screens */
+.glass-card {
+    background: var(--bg-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: var(--sp-6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .glass-card {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Stack the form elements vertically */
+#login-form, #signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+/* Style the input fields */
+#login-form input, #signup-form input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+/* Highlight input fields when typing */
+#login-form input:focus, #signup-form input:focus {
+    border-color: var(--accent-primary);
+    background: white;
+}
+
+/* Dark mode overrides for inputs */
+[data-theme="dark"] #login-form input, [data-theme="dark"] #signup-form input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+[data-theme="dark"] #login-form input:focus, [data-theme="dark"] #signup-form input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-primary);
+}
+
+/* The Sign In / Sign Up Buttons */
+.auth-btn {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+}
+
+.auth-btn:hover {
+    background: #4f46e5;
+}
+
+.auth-btn:active {
+    transform: scale(0.98);
+}

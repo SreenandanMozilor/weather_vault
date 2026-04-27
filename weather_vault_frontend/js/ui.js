@@ -4,7 +4,7 @@ import { createCard, createErrorCard, createSkeletonCard } from './weatherCard.j
 let currentCities = []; 
 let isCelsius = true; 
 let errorCards = [];
-let searchHistoryState = []; // <-- NEW: State for search history
+let searchHistoryState = []; 
 
 // --- DOM Elements ---
 const grid = document.getElementById('weather-grid');
@@ -13,7 +13,6 @@ const searchInput = document.getElementById('city-name');
 const unitToggle = document.querySelector('.unit-toggle');
 const locateBtn = document.getElementById('current-location-btn');
 
-// Fetch live history from our local state
 function getHistory() {
     return searchHistoryState;
 }
@@ -22,11 +21,9 @@ function getHistory() {
 export async function initDashboard(expectedCount = null) {
     showSkeleton(expectedCount); 
     try {
-        // Fetch weather dashboard data
         const data = await ApiClient.request('/weather/dashboard');
         currentCities = data.dashboard || [];
         
-        // NEW: Fetch the user's personal search history on login!
         const historyData = await ApiClient.request('/weather/history');
         searchHistoryState = historyData.history || [];
     } catch (error) {
@@ -37,40 +34,36 @@ export async function initDashboard(expectedCount = null) {
 
 // --- Render Logic ---
 function renderGrid() {
-    grid.innerHTML = ''; // Clear grid first
+    grid.innerHTML = ''; 
     const cities = currentCities;
 
-    // 1. The Empty State
     if (cities.length === 0 && errorCards.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">🌍</div>
-                
                 <h2>No cities yet</h2>
                 <p>Search for a city above to start tracking weather across the world.<br>You can track up to 8 cities at once.</p>
                 <button class="add-first-city-btn">+ Add Your First City</button>
             </div>
         `;
-        
-        // Attach listener to the empty state button
         grid.querySelector('.add-first-city-btn')?.addEventListener('click', () => searchInput.focus());
         return;
     }
 
-    // 2. Append Weather Cards
     cities.forEach(city => {
         const cardNode = createCard(city, isCelsius, async () => {
-            // Delete from Python Vault
-            await ApiClient.request(`/weather/cities/${city.city_id}`, { method: 'DELETE' });
-            showToast(`${city.city_name} removed`, 'success');
-            
-            // Tell the dashboard we expect 1 less card now!
-            initDashboard(Math.max(0, currentCities.length - 1)); 
+            try {
+                // THE FIX: Perfectly aligned URL and JSON keys!
+                await ApiClient.request(`/weather/cities/${city.city_id}`, { method: 'DELETE' });
+                showToast(`${city.city_name} removed`, 'success');
+                initDashboard(Math.max(0, currentCities.length - 1)); 
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
         });
         grid.appendChild(cardNode);
     });
 
-    // 3. Append Error Cards
     errorCards.forEach(err => {
         const errNode = createErrorCard(
             err, 
@@ -94,22 +87,20 @@ async function handleAddCity(cityName) {
     grid.appendChild(skeletonEl);
 
     try {
-        // NEW: Save the search to the History Vault
         await ApiClient.request('/weather/history', {
             method: 'POST',
             body: JSON.stringify({ city_name: cityName })
         });
         
-        // Update local UI state immediately to feel snappy
         searchHistoryState = [cityName, ...searchHistoryState.filter(c => c !== cityName)].slice(0, 5);
 
-        // Post to Python Vault!
         await ApiClient.request('/weather/save', {
             method: 'POST',
             body: JSON.stringify({ city_name: cityName })
         });
+        
         showToast(`${cityName} added!`, 'success');
-        await initDashboard(currentCities.length + 1); // Reload data
+        await initDashboard(currentCities.length + 1); 
     } catch (error) {
         showToast(error.message, 'error');
     } finally {
@@ -134,7 +125,6 @@ function showSkeleton(expectedCount = null) {
 const historyDropdown = document.getElementById('search-history');
 let searchTimeout;
 
-// 3. The Dropdown Renderer
 function renderDropdownList(historyList, apiList, query = "") {
     const filteredApiList = apiList.filter(apiCity => !historyList.includes(apiCity));
 
@@ -168,7 +158,6 @@ function renderDropdownList(historyList, apiList, query = "") {
     historyDropdown.innerHTML = html;
 }
 
-// 4. Helper function to make the matching letters bold
 function highlightMatch(cityStr, query) {
     if (!query) return cityStr;
     const escapedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -176,7 +165,6 @@ function highlightMatch(cityStr, query) {
     return cityStr.replace(regex, "<strong>$1</strong>");
 }
 
-// 5. Hide dropdown on click outside
 document.addEventListener('click', (event) => {
     if (!searchInput.contains(event.target) && !historyDropdown.contains(event.target)) {
         historyDropdown.style.display = 'none';
@@ -318,9 +306,22 @@ function getUserLocation() {
         if (!navigator.geolocation) {
             reject(new Error("Geolocation is not supported by your browser."));
         } else {
+            // We added options to force a better check, and error handling!
+            const options = { timeout: 10000, enableHighAccuracy: true };
+            
             navigator.geolocation.getCurrentPosition(
                 (position) => resolve({ lat: position.coords.latitude, lon: position.coords.longitude }),
-                () => reject(new Error("Unable to retrieve your location."))
+                (error) => {
+                    console.error("GEOLOCATION FAILED:", error.message);
+                    
+                    let errorMsg = "Unable to retrieve your location.";
+                    if (error.code === 1) errorMsg = "Location blocked. (Check Mac System Settings!)";
+                    if (error.code === 2) errorMsg = "Location unavailable.";
+                    if (error.code === 3) errorMsg = "Location request timed out.";
+                    
+                    reject(new Error(errorMsg));
+                },
+                options
             );
         }
     });

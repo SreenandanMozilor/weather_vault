@@ -1,173 +1,120 @@
+import asyncio
+from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-import asyncio
-from pydantic import BaseModel
+from sqlalchemy import select
 
-# Import the Database Dependency
 from weather_app_python.db.dependencies import get_db_session
-
-# Import the Bouncer, the Vault, and the Models
-from weather_app_python.web.api.weather.saved_weather_create import SavedWeatherCreate
-from weather_app_python.db.models.saved_weather import SavedWeather
-from weather_app_python.db.models.user import User
-from weather_app_python.db.models.search_history import SearchHistory 
-
-# Import the Security Guard and the Weather Service
-from weather_app_python.web.api.users.views import get_current_user
+from weather_app_python.services.auth import get_current_user
+from weather_app_python.db.models.user_model import User
+from weather_app_python.db.models.search_history_model import SearchHistory
+from weather_app_python.db.dao.saved_weather_dao import SavedWeatherDAO
 from weather_app_python.services.weather.client import WeatherClient
+from weather_app_python.web.api.weather.schema import CityRequest, MessageResponse, DashboardResponse, HistoryResponse, CurrentWeatherResponse
 
 router = APIRouter()
 weather_client = WeatherClient()
 
-class CityRequest(BaseModel):
-    city_name: str
+@router.get("/current", response_model=CurrentWeatherResponse)
+async def get_current_weather(
+    city_name: str,
+    current_user: User = Depends(get_current_user)
+) -> CurrentWeatherResponse:
+    """Fetches live weather without saving it."""
+    geo_data = await weather_client.get_coordinates(city_name)
+    weather_data = await weather_client.get_weather_data(geo_data["latitude"], geo_data["longitude"])
+    
+    return CurrentWeatherResponse(
+        city=city_name, 
+        weather=weather_data
+    )
 
-@router.post("/save")
+@router.post("/save", response_model=MessageResponse)
 async def save_city_weather(
     request: CityRequest,
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db_session)
-):
-    """Saves a city for the currently authenticated user."""
+) -> MessageResponse:
+    dao = SavedWeatherDAO(db)
     
-    # 1. Check if the user already saved this city (prevent duplicates)
-    query = select(SavedWeather).where(
-        (SavedWeather.user_id == current_user.userid) & 
-        (SavedWeather.city_name.ilike(request.city_name))
-    )
-    result = await db.execute(query)
-    existing_city = result.scalars().first()
-    
-    if existing_city:
-         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have already saved this city."
-        )
-    
-    # Enforces 8-city limit per user
-    count_query = select(func.count()).select_from(SavedWeather).where(
-        SavedWeather.user_id == current_user.userid
-    )
-    count_result = await db.execute(count_query)
-    total_cities = count_result.scalar()
-    
+    total_cities = await dao.count_user_cities(current_user.userid)
     if total_cities >= 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Dashboard full! You can only save up to 8 cities."
-        )
+        raise HTTPException(status_code=400, detail="Dashboard full! You can only save up to 8 cities.")
+        
+    existing = await dao.get_saved_city(current_user.userid, request.city_name)
+    if existing:
+         raise HTTPException(status_code=400, detail="You have already saved this city.")
 
-    # 2. Get coordinates from Open-Meteo
     geo_data = await weather_client.get_coordinates(request.city_name)
     
-    # 3. Create the Database Record 
-    new_saved_city = SavedWeather(
+    await dao.add_city(
         user_id=current_user.userid,
         city_name=request.city_name,
         country=geo_data["country"],
-        latitude=geo_data["latitude"],
-        longitude=geo_data["longitude"]
+        lat=geo_data["latitude"],
+        lon=geo_data["longitude"]
     )
     
-    # 4. Save to PostgreSQL
-    db.add(new_saved_city)
-    await db.commit()
-    
-    return {
-        "message": f"Successfully saved {request.city_name}!",
-        "city_data": geo_data
-    }
+    return MessageResponse(message=f"Successfully saved {request.city_name}!", city_data=geo_data)
 
-@router.get("/cities")
-async def get_saved_cities(
-    current_user: User = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_db_session)
-):
-    """Retrieves all saved cities for the currently authenticated user."""
-    query = select(SavedWeather).where(SavedWeather.user_id == current_user.userid)
-    result = await db.execute(query)
-    saved_cities = result.scalars().all()
-    return {"cities": saved_cities}
-
-@router.delete("/cities/{city_id}")
+@router.delete("/cities/{city_id}", response_model=MessageResponse)
 async def delete_saved_city(
     city_id: int, 
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db_session)
-):
-    """Deletes a specific saved city for the logged-in user."""
-    query = select(SavedWeather).where(
-        (SavedWeather.id == city_id) & 
-        (SavedWeather.user_id == current_user.userid)
-    )
-    result = await db.execute(query)
-    city_to_delete = result.scalars().first()
-    
-    if not city_to_delete:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="City not found or you don't have permission to delete it."
-        )
+) -> MessageResponse:
+    dao = SavedWeatherDAO(db)
+    deleted = await dao.delete_city(current_user.userid, city_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="City not found.")
         
-    await db.delete(city_to_delete)
-    await db.commit()
-    
-    return {"message": f"Successfully deleted {city_to_delete.city_name}."}
+    return MessageResponse(message="Successfully deleted city.")
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=DashboardResponse)
 async def get_weather_dashboard(
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db_session)
-):
-    """Fetches saved cities and their LIVE weather data concurrently."""
-    query = select(SavedWeather).where(SavedWeather.user_id == current_user.userid)
-    result = await db.execute(query)
-    saved_cities = result.scalars().all()
+) -> DashboardResponse:
+    dao = SavedWeatherDAO(db)
+    saved_cities = await dao.get_all_user_cities(current_user.userid)
     
     if not saved_cities:
-        return {"dashboard": []}
+        return DashboardResponse(dashboard=[])
 
-    async def fetch_city_weather(city: SavedWeather):
-        try:
-            weather_data = await weather_client.get_weather_data(city.latitude, city.longitude)
-            return {
-                "city_id": city.id,
-                "city_name": city.city_name,
-                "country": city.country,
-                "current_weather": weather_data.get("current", {})
-            }
-        except Exception:
-            return {
-                "city_id": city.id,
-                "city_name": city.city_name,
-                "error": "Failed to load live weather."
-            }
+    semaphore = asyncio.Semaphore(3)
+
+    async def fetch_city_weather(city):
+        async with semaphore:
+            try:
+                weather_data = await weather_client.get_weather_data(city.latitude, city.longitude)
+                return {
+                    "city_id": city.id,
+                    "city_name": city.city_name,
+                    "country": city.country,
+                    "current_weather": weather_data.get("current", {})
+                }
+            except Exception:
+                return {"city_id": city.id, "city_name": city.city_name, "country": city.country, "current_weather": {}}
 
     tasks = [fetch_city_weather(city) for city in saved_cities]
     dashboard_data = await asyncio.gather(*tasks)
-    return {"dashboard": dashboard_data}
+    return DashboardResponse(dashboard=dashboard_data)
 
-# Search History Endpoints
-
-@router.post("/history")
+@router.post("/history", response_model=MessageResponse)
 async def add_search_history(
     request: CityRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
-):
-    """Saves a new search query to the database."""
+) -> MessageResponse:
     new_search = SearchHistory(user_id=current_user.userid, city_name=request.city_name)
     db.add(new_search)
-    await db.commit()
-    return {"message": "History saved"}
+    return MessageResponse(message="History saved")
 
-@router.get("/history")
+@router.get("/history", response_model=HistoryResponse)
 async def get_search_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
-):
-    """Retrieves the user's 5 most recent unique searches."""
+) -> HistoryResponse:
     query = select(SearchHistory.city_name).where(
         SearchHistory.user_id == current_user.userid
     ).order_by(SearchHistory.searched_at.desc()).limit(20)
@@ -175,8 +122,7 @@ async def get_search_history(
     result = await db.execute(query)
     cities = result.scalars().all()
     
-    # Deduplicate the list while preserving the most recent order
     seen = set()
     history = [x for x in cities if not (x in seen or seen.add(x))]
     
-    return {"history": history[:5]}
+    return HistoryResponse(history=history[:5])

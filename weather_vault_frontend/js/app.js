@@ -47,10 +47,11 @@ loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
         loginError.classList.add('hidden');
-        const username = document.getElementById('username').value;
+        // Grab the new dual-purpose identifier field
+        const identifier = document.getElementById('login-identifier').value;
         const password = document.getElementById('password').value;
         
-        await Auth.login(username, password);
+        await Auth.login(identifier, password);
         updateUI();
     } catch (error) {
         loginError.textContent = error.message;
@@ -63,11 +64,13 @@ signupForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
         signupError.classList.add('hidden');
+        // Grab all three identical-looking fields
+        const email = document.getElementById('signup-email').value;
         const username = document.getElementById('signup-username').value;
         const password = document.getElementById('signup-password').value;
         
-        await Auth.register(username, password);
-        await Auth.login(username, password); // Auto-login after registering!
+        await Auth.register(email, username, password);
+        await Auth.login(username, password); // Auto-login after registering
         updateUI();
     } catch (error) {
         signupError.textContent = error.message;

@@ -21,6 +21,9 @@ dependencies = [
   "httptools >=0.7.1,<1",
   "pymongo >=4.15.4,<5",
   "loguru >=0.7.3,<1",
+  "bcrypt>=5.0.0",
+  "pyjwt>=2.12.1",
+  "python-multipart>=0.0.26",
 ]
 
 [dependency-groups]
@@ -124,11 +127,11 @@ lint.ignore = [
     "PLR0913", # Too many arguments for function call
     "D106",    # Missing docstring in public nested class
 ]
+lint.mccabe = { max-complexity = 10 }
 exclude = [
     "weather_app_python/db/migrations",
     ".venv/"
 ]
-lint.mccabe = { max-complexity = 10 }
 line-length = 88
 
 [tool.ruff.lint.per-file-ignores]

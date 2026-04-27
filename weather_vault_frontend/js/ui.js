@@ -1,9 +1,10 @@
 import { ApiClient } from './api.js';
 import { createCard, createErrorCard, createSkeletonCard } from './weatherCard.js';
 
-let currentCities = []; // Local state to hold the backend data
+let currentCities = []; 
 let isCelsius = true; 
 let errorCards = [];
+let searchHistoryState = []; // <-- NEW: State for search history
 
 // --- DOM Elements ---
 const grid = document.getElementById('weather-grid');
@@ -12,17 +13,22 @@ const searchInput = document.getElementById('city-name');
 const unitToggle = document.querySelector('.unit-toggle');
 const locateBtn = document.getElementById('current-location-btn');
 
+// Fetch live history from our local state
 function getHistory() {
-    return []; // Temporary empty history until we build the backend for it
+    return searchHistoryState;
 }
 
 // --- Initialization ---
 export async function initDashboard(expectedCount = null) {
     showSkeleton(expectedCount); 
     try {
-        // Fetch from Python!
+        // Fetch weather dashboard data
         const data = await ApiClient.request('/weather/dashboard');
         currentCities = data.dashboard || [];
+        
+        // NEW: Fetch the user's personal search history on login!
+        const historyData = await ApiClient.request('/weather/history');
+        searchHistoryState = historyData.history || [];
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -58,7 +64,7 @@ function renderGrid() {
             await ApiClient.request(`/weather/cities/${city.city_id}`, { method: 'DELETE' });
             showToast(`${city.city_name} removed`, 'success');
             
-            // UPDATE THIS LINE: Tell the dashboard we expect 1 less card now!
+            // Tell the dashboard we expect 1 less card now!
             initDashboard(Math.max(0, currentCities.length - 1)); 
         });
         grid.appendChild(cardNode);
@@ -68,18 +74,13 @@ function renderGrid() {
     errorCards.forEach(err => {
         const errNode = createErrorCard(
             err, 
-            // onRemove callback
             () => {
                 errorCards = errorCards.filter(e => e.id !== err.id);
                 renderGrid();
             },
-            // onRetry callback
             (cityName) => {
-                // Remove the error card from the state and screen immediately
                 errorCards = errorCards.filter(e => e.id !== err.id);
                 renderGrid(); 
-                
-                // Fire the add logic directly!
                 handleAddCity(cityName); 
             }
         );
@@ -93,6 +94,15 @@ async function handleAddCity(cityName) {
     grid.appendChild(skeletonEl);
 
     try {
+        // NEW: Save the search to the History Vault
+        await ApiClient.request('/weather/history', {
+            method: 'POST',
+            body: JSON.stringify({ city_name: cityName })
+        });
+        
+        // Update local UI state immediately to feel snappy
+        searchHistoryState = [cityName, ...searchHistoryState.filter(c => c !== cityName)].slice(0, 5);
+
         // Post to Python Vault!
         await ApiClient.request('/weather/save', {
             method: 'POST',
@@ -109,7 +119,6 @@ async function handleAddCity(cityName) {
 
 function showSkeleton(expectedCount = null) {
     grid.innerHTML = '';
-    // Use the predicted count, OR the current amount of cards, OR default to 1 on first login
     let count = 1;
     if (expectedCount !== null) {
         count = expectedCount;
@@ -117,20 +126,16 @@ function showSkeleton(expectedCount = null) {
         count = currentCities.length;
     }
     
-    // Draw exactly that many skeletons!
     for (let i = 0; i < count; i++) {
         grid.appendChild(createSkeletonCard());
     }
 }
 
 const historyDropdown = document.getElementById('search-history');
-
-// Live Search logic
-let searchTimeout; // Used for debouncing
+let searchTimeout;
 
 // 3. The Dropdown Renderer
 function renderDropdownList(historyList, apiList, query = "") {
-    // Remove duplicates (if an API suggestion is already in our history)
     const filteredApiList = apiList.filter(apiCity => !historyList.includes(apiCity));
 
     if (historyList.length === 0 && filteredApiList.length === 0) {
@@ -142,7 +147,6 @@ function renderDropdownList(historyList, apiList, query = "") {
     
     let html = '';
 
-    // Render History Matches
     if (historyList.length > 0) {
         html += `<div class="dropdown-section-title">Recent Searches</div>`;
         html += historyList.map(city => `
@@ -152,7 +156,6 @@ function renderDropdownList(historyList, apiList, query = "") {
         `).join('');
     }
 
-    // Render API Suggestions
     if (filteredApiList.length > 0) {
         html += `<div class="dropdown-section-title">Global Cities</div>`;
         html += filteredApiList.map(city => `
@@ -168,13 +171,12 @@ function renderDropdownList(historyList, apiList, query = "") {
 // 4. Helper function to make the matching letters bold
 function highlightMatch(cityStr, query) {
     if (!query) return cityStr;
-    // Strip special regex characters from the query safely
     const escapedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, "gi");
     return cityStr.replace(regex, "<strong>$1</strong>");
 }
 
-// 5. Hide dropdown on click outside (Keeps your existing logic)
+// 5. Hide dropdown on click outside
 document.addEventListener('click', (event) => {
     if (!searchInput.contains(event.target) && !historyDropdown.contains(event.target)) {
         historyDropdown.style.display = 'none';
@@ -186,42 +188,34 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
-    // Create the toast element
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
 
-    // Add it to the screen
     container.appendChild(toast);
 
-    // Small delay to allow CSS to register the starting position before animating
     requestAnimationFrame(() => {
         toast.classList.add('show');
     });
 
-    // Remove it after 3 seconds
     setTimeout(() => {
-        toast.classList.remove('show'); // Slide out
-        setTimeout(() => toast.remove(), 300); // Wait for animation to finish, then delete from DOM
+        toast.classList.remove('show'); 
+        setTimeout(() => toast.remove(), 300); 
     }, 3000);
 }
 
 // --- Event Listeners ---
 
-// Show default history or live search when clicking on the search bar
 searchInput.addEventListener('focus', () => {
     const query = searchInput.value.trim().toLowerCase();
     
     if (!query) {
-        // If empty, show recent searches
         renderDropdownList(getHistory(), [], "");
     } else {
-        // If there's already text in the bar, manually trigger the 'input' event to wake the dropdown back up
         searchInput.dispatchEvent(new Event('input'));
     }
 });
 
-// Live Search event listener
 searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim().toLowerCase();
@@ -232,7 +226,6 @@ searchInput.addEventListener('input', () => {
     }
 
     searchTimeout = setTimeout(async () => {
-        // Filter history only if it matches
         const matchedHistory = getHistory().filter(city =>
             city.toLowerCase().startsWith(query) || city.toLowerCase().includes(query)
         );
@@ -248,7 +241,6 @@ searchInput.addEventListener('input', () => {
             }
         } catch (e) {}
 
-        // Always show API suggestions; only show history if there are matches
         renderDropdownList(matchedHistory, apiSuggestions, query);
     }, 300);
 });
@@ -257,19 +249,16 @@ searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') addBtn.click();
 });
 
-// Add city
 addBtn.addEventListener('click', () => {
     const cityName = searchInput.value.trim();
     if (!cityName) return;
 
-    // Reset UI
     searchInput.value = '';
     historyDropdown.style.display = 'none';
     
     handleAddCity(cityName);
 });
 
-// Unit Toggle
 unitToggle.addEventListener('click', () => {
     isCelsius = !isCelsius;
     
@@ -295,7 +284,6 @@ historyDropdown.addEventListener('click', (event) => {
 
     const cityName = clickedItem.getAttribute('data-city');
 
-    // Reset UI
     historyDropdown.style.display = 'none';
     searchInput.value = '';
 
@@ -304,26 +292,20 @@ historyDropdown.addEventListener('click', (event) => {
 
 // --- DARK MODE LOGIC ---
 const themeToggle = document.getElementById('theme-toggle');
-
-// 1. Check local storage for a saved theme on load
 const savedTheme = localStorage.getItem('weather_theme') || 'light';
 if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    themeToggle.textContent = '☀️'; // Change icon to Sun
+    themeToggle.textContent = '☀️';
 }
 
-// 2. The Click Listener
 themeToggle.addEventListener('click', () => {
-    // Check what the current theme is
     const currentTheme = document.documentElement.getAttribute('data-theme');
     
     if (currentTheme === 'dark') {
-        // Switch to Light Mode
         document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('weather_theme', 'light');
         themeToggle.textContent = '🌙';
     } else {
-        // Switch to Dark Mode
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('weather_theme', 'dark');
         themeToggle.textContent = '☀️';
@@ -351,34 +333,24 @@ async function getGeoCityName(lat, lon) {
     return data.city || data.locality || data.principalSubdivision;
 }
 
-// --- GET CURRENT LOCATION ---
 locateBtn.addEventListener('click', async () => {
-    // Prevent spam clicking!
     if (locateBtn.disabled) return;
     locateBtn.disabled = true;
 
     const svgIcon = locateBtn.querySelector('svg');
-    
-    // Start spinning animation
     svgIcon.classList.add('loading-spin');
 
     try {
-        // 1. Get coordinates from the browser
         const { lat, lon } = await getUserLocation();
-        
-        // 2. Convert coordinates to a city name via BigDataCloud
         const cityName = await getGeoCityName(lat, lon);
         
-        // 3. Pass it to your existing robust add-city flow
         if (cityName) {
             await handleAddCity(cityName);
         }
     } catch (error) {
-        // Gracefully handle denied permissions or reverse-geocode failures
         showToast(error.message, 'error');
     } finally {
-        // Stop spinning animation
         svgIcon.classList.remove('loading-spin');
-        locateBtn.disabled = false; // <-- Re-enable the button
+        locateBtn.disabled = false; 
     }
 });

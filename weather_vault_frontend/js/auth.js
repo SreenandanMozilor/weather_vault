@@ -1,7 +1,8 @@
 export class Auth {
     static async register(email, username, password) {
+        const BASE_URL = 'https://puzzle-vanquish-gala.ngrok-free.dev';
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/users/register', {
+            const response = await fetch(`${BASE_URL}/api/users/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, username, password }) // Added email
@@ -47,7 +48,7 @@ export class Auth {
     
     static async login(identifier, password) {
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/users/login', {
+            const response = await fetch(`${BASE_URL}/api/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ identifier, password }) // Changed to identifier

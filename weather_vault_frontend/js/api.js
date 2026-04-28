@@ -8,7 +8,7 @@ export class ApiClient {
     }
 
     static async request(endpoint, options = {}, retries = 2) {
-        const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const BASE_URL = 'https://puzzle-vanquish-gala.ngrok-free.dev';
         const fetchUrl = `${BASE_URL}/api${endpoint}`;
         const fetchOptions = {
             method: options.method || 'GET',

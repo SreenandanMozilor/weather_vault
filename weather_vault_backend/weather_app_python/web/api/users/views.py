@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from weather_app_python.db.dependencies import get_db_session
-from weather_app_python.web.api.users.schema import UserCreate, UserLogin, Token
+from weather_app_python.web.api.users.schema import UserCreate, UserLogin, Token, UserResponse
 from weather_app_python.db.dao.user_dao import UserDAO
-from weather_app_python.services.auth import get_password_hash, verify_password, create_access_token
+from weather_app_python.services.auth import get_password_hash, verify_password, create_access_token, get_current_user
+from weather_app_python.db.models.user_model import User
 
 router = APIRouter()
 
@@ -26,7 +27,6 @@ async def register_user(
         username=user_data.username, 
         hashed_password=hashed_pwd
     )
-    await db.commit() 
     
     access_token = create_access_token(data={"sub": new_user.username})
     return Token(access_token=access_token, token_type="bearer")
@@ -40,7 +40,6 @@ async def login_for_access_token(
     
     db_user = await dao.get_user_by_identifier(user_data.identifier)
 
-    # ALIGNED: We check the plain text password against the securely named hashed_password column
     if not db_user or not verify_password(user_data.password, db_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,3 +49,9 @@ async def login_for_access_token(
 
     access_token = create_access_token(data={"sub": db_user.username})
     return Token(access_token=access_token, token_type="bearer")
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user)
+) -> UserResponse:
+    return UserResponse(username=current_user.username, email=current_user.email)

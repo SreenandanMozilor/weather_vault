@@ -5,7 +5,6 @@ from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
-# THE FIX: A single, shared connection pool for the entire application!
 shared_client = httpx.AsyncClient(
     timeout=httpx.Timeout(15.0),
     limits=httpx.Limits(max_connections=20, max_keepalive_connections=10)
@@ -26,7 +25,6 @@ class WeatherClient:
         }
         
         try:
-            # Use the shared client
             response = await shared_client.get(self.GEO_URL, params=params)
             response.raise_for_status()
             data = response.json()
@@ -60,20 +58,19 @@ class WeatherClient:
             "timezone": "auto"
         }
         
-        # Add a small retry loop just in case a network packet drops
         for attempt in range(3):
             try:
-                # Use the shared pooled client!
+
                 response = await shared_client.get(self.BASE_URL, params=params)
                 response.raise_for_status()
                 return response.json()
                 
             except httpx.ConnectTimeout as e:
-                if attempt == 2: # Give up after 3 tries
+                if attempt == 2:
                     logger.error("OPEN-METEO CONNECTION ERROR: %s", repr(e))
                     raise HTTPException(status_code=502, detail="Failed to connect to Weather API")
                 logger.warning(f"Connection timeout, retrying attempt {attempt + 1}...")
-                await asyncio.sleep(0.5) # Wait half a second and try again
+                await asyncio.sleep(0.5)
                 
             except httpx.HTTPStatusError as e:
                 logger.error("OPEN-METEO API ERROR: %s - %s", e.response.status_code, e.response.text)

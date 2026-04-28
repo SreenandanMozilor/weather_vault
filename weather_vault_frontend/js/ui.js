@@ -21,6 +21,16 @@ function getHistory() {
 export async function initDashboard(expectedCount = null) {
     showSkeleton(expectedCount); 
     try {
+        try {
+            const user = await ApiClient.getCurrentUser();
+            const greetingEl = document.getElementById('user-greeting');
+            if (greetingEl) {
+                greetingEl.textContent = `Hello, ${user.username} 👋`;
+            }
+        } catch (err) {
+            console.warn("Could not load user profile:", err);
+        }
+
         const data = await ApiClient.request('/weather/dashboard');
         currentCities = data.dashboard || [];
         

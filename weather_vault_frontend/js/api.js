@@ -21,6 +21,12 @@ export class ApiClient {
             const data = await response.json();
             
             if (!response.ok) {
+                if (response.status === 401 && data.detail === "Could not validate credentials") {
+                    alert("Could not validate credentials. Your session has expired, logging you out...");
+                    localStorage.removeItem('weather_jwt'); // Clear the bad token
+                    window.location.reload(); // Reloads the page to exit dashboard
+                    return; // Stop execution
+                }
                 // Translate any Pydantic validation arrays into readable text
                 if (Array.isArray(data.detail)) {
                     throw new Error(data.detail.map(err => err.msg).join(', '));
@@ -42,5 +48,9 @@ export class ApiClient {
 
     static async getCurrentWeather(cityName) {
         return this.request(`/weather/current?city_name=${encodeURIComponent(cityName)}`);
+    }
+
+    static async getCurrentUser() {
+        return this.request('/users/me');
     }
 }

@@ -15,3 +15,8 @@ class Token(BaseModel):
     """Schema for the authentication token."""
     access_token: str
     token_type: str
+
+class UserResponse(BaseModel):
+    """Schema for returning user profile data."""
+    username: str
+    email: EmailStr

@@ -11,6 +11,7 @@ from weather_app_python.db.models.search_history_model import SearchHistory
 from weather_app_python.db.dao.saved_weather_dao import SavedWeatherDAO
 from weather_app_python.services.weather.client import WeatherClient
 from weather_app_python.web.api.weather.schema import CityRequest, MessageResponse, DashboardResponse, HistoryResponse, CurrentWeatherResponse
+from weather_app_python.db.dao.search_history_dao import SearchHistoryDAO
 
 router = APIRouter()
 weather_client = WeatherClient()
@@ -106,8 +107,8 @@ async def add_search_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
 ) -> MessageResponse:
-    new_search = SearchHistory(user_id=current_user.userid, city_name=request.city_name)
-    db.add(new_search)
+    dao = SearchHistoryDAO(db)
+    await dao.add_search_history(current_user.userid, request.city_name)
     return MessageResponse(message="History saved")
 
 @router.get("/history", response_model=HistoryResponse)
@@ -115,14 +116,6 @@ async def get_search_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
 ) -> HistoryResponse:
-    query = select(SearchHistory.city_name).where(
-        SearchHistory.user_id == current_user.userid
-    ).order_by(SearchHistory.searched_at.desc()).limit(20)
-    
-    result = await db.execute(query)
-    cities = result.scalars().all()
-    
-    seen = set()
-    history = [x for x in cities if not (x in seen or seen.add(x))]
-    
-    return HistoryResponse(history=history[:5])
+    dao = SearchHistoryDAO(db)
+    history = await dao.get_recent_history(current_user.userid)
+    return HistoryResponse(history=history)

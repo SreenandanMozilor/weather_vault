@@ -23,7 +23,6 @@ class UserDAO:
         return {"exists": True, "field": "username"}
 
     async def create_user_model(self, email: str, username: str, hashed_password: str) -> User:
-        # ALIGNED: We are now passing it securely to the hashed_password column
         new_user = User(email=email, username=username, hashed_password=hashed_password)
         self.session.add(new_user)
         await self.session.flush()

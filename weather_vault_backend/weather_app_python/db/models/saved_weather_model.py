@@ -13,5 +13,4 @@ class SavedWeather(Base):
     country: Mapped[str] = mapped_column(String(200))
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
-    # Review Fix #14: Added timestamp
     saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

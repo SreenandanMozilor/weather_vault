@@ -3,7 +3,8 @@ export class ApiClient {
         const token = localStorage.getItem('weather_jwt');
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'ngrok-skip-browser-warning': 'true'
         };
     }
 
@@ -13,7 +14,7 @@ export class ApiClient {
         const fetchOptions = {
             method: options.method || 'GET',
             headers: this.getHeaders(),
-            cache: 'no-store', // THE FIX: Forces Chrome to always get fresh data from the DB!
+            cache: 'no-store',
             ...options
         };
 

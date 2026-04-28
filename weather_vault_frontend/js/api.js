@@ -37,7 +37,6 @@ export class ApiClient {
             return data;
 
         } catch (error) {
-            // THE SHOCK ABSORBER: If Uvicorn restarts, wait 500ms and try again silently!
             if (error.message.includes('Failed to fetch') && retries > 0) {
                 console.warn(`Server reloading... pausing and retrying ${endpoint}`);
                 await new Promise(resolve => setTimeout(resolve, 500));
